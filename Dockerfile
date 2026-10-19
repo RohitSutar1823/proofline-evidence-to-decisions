@@ -1,12 +1,19 @@
-FROM node:20.11.1-alpine AS build
+FROM node:24.13.0-alpine AS dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci --no-audit --no-fund && chown -R node:node /app
+
+FROM dependencies AS test
 COPY index.html vite.config.js .nvmrc .env.example ./
 COPY src ./src
+USER node
+CMD ["npm", "test"]
+
+FROM test AS build
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.28.0-alpine AS web
 COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80
+USER 101
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

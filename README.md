@@ -1,86 +1,108 @@
 # Proofline — Evidence to Decisions
 
-Proofline is a human-in-the-loop evidence workspace for decisions made from overlapping, incomplete, or conflicting reports. It makes uncertainty visible instead of blending it into a confident-looking summary.
+Proofline is a local, human-in-the-loop evidence workspace for overlapping, incomplete, or conflicting reports. Its Evidence Map links claims to source wording, makes uncertainty visible, and produces a reviewable Markdown decision brief.
 
-## Why it exists
-
-The core experience is the **Evidence Map**: every claim is linked back to original source wording and labelled as confirmed, conflicting, unverified, or missing information. A system suggestion is never the same thing as a human-approved conclusion.
-
-The included Campus Innovation Fair case is fictional sample data. It works offline with no API key or external service.
+The Campus Innovation Fair case is fictional. There is **no runtime AI, model adapter, API key, or external service**. System suggestions and human decisions are distinct; approving a brief does not verify its evidence or mean every claim has been reviewed.
 
 ## Run locally
 
-Requirements: Node 20.11.1 (see `.nvmrc`) and npm.
+Use **Node 24.13.0** (pinned in `.nvmrc`, `package.json`, and Docker) and its bundled npm. This version satisfies the installed Vite/plugin requirement (`^20.19.0 || >=22.12.0`) and Vitest requirement (`^22.12.0 || ^24.0.0 || >=26.0.0`).
 
 ```bash
+nvm install
+nvm use
 npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite. The **Load demo case** button opens the prepared investigation. The app stores the current case in browser local storage so edits survive a refresh. Use **Reset case** to restore the original fictional evidence.
+`nvm` commands are optional if Node 24.13.0 is already selected; Windows nvm users can use `nvm install 24.13.0` and `nvm use 24.13.0`. Open the URL printed by Vite. **Load demo case** opens the prepared case; **Reset case** restores the original fictional evidence. Browser local storage retains the case across refreshes on the same origin. No `.env` file is needed; `.env.example` documents this.
 
-## Test
-
-The single documented test command is fully offline:
+## Tests and production build
 
 ```bash
 npm test
-```
-
-It covers the demo brief, source links and excerpts, human review edits, review progress, and Markdown export.
-
-## Production build
-
-```bash
 npm run build
 npm run preview
 ```
 
-## Docker
+`npm test` runs Vitest once: 10 analysis tests and 10 React interaction tests. Coverage includes curated demo matching, conservative extraction, source excerpts, human overrides, approval invalidation, report CRUD, search, storage validation/persistence, clipboard failure, download creation, dialog focus/Escape, and resetting the demo. React interactions run in jsdom, not a real browser. Tests and builds need installed dependencies but no runtime network access. `npm ci` initially needs registry access or a complete dependency cache.
 
-The container uses a pinned Node 20.11.1 build stage and nginx for static serving.
+`npm run build` produces `dist/`; `npm run preview` serves that build locally for inspection.
+
+Latest local checks: Node `v24.16.0`, `npm test` passed 2 files / 20 tests, and `npm run build` succeeded. The exact pinned Node 24.13.0 runtime has not yet been exercised. The built-in browser could not open a tab (timeout); the real-browser visual/responsive walkthrough remains unverified.
+
+## Docker and offline verification
+
+The dependency stage uses Node 24.13.0 and `npm ci`. The `test` target retains installed dependencies and runs tests when the container starts. The final `web` target serves only static build output with unprivileged nginx on port 8080 (UID 101).
 
 ```bash
+docker build --target test -t proofline-test .
+docker run --rm --network none proofline-test
+docker build -t proofline .
+docker run --rm -p 8080:8080 proofline
 ```
 
-Open <http://localhost:8080>.
+Open <http://localhost:8080>. Building images requires access to base images and npm packages unless already cached. The separate `docker run --rm --network none proofline-test` command verifies tests with container networking disabled **after** dependencies are installed; it does not claim the initial image build is offline. Check its exit code is zero. Static web serving can then be inspected using the published port and the browser's offline mode after loading the app.
+
+**Docker verification status:** not executed in this environment because the Docker binary is absent. These commands are a verification procedure, not a recorded successful Docker run. Image tags pin versions, not immutable image digests.
+
+## How analysis and review work
+
+- **Exact demo:** curated claims are returned only when the complete report set has the demo's exact IDs and text. Report order and metadata do not determine this match. These are prepared fictional findings, not live semantic analysis.
+- **Edited/new reports:** other report sets use deterministic sentence extraction. Punctuation/newlines split source text into trimmed excerpts; each suggestion links to its source and begins **Unverified**, unreviewed, with manual review required. This is conservative extraction, not semantic verification, contradiction detection, deduplication, or causal reasoning.
+- **Source changes:** adding, editing, or removing reports rebuilds suggestions for the current source set and clears brief approval. Previous claim-level review decisions are replaced by the rebuilt suggestions; original curated claims return only for the exact demo set.
+- **Human review:** edit claim wording, choose a status, and add notes while retaining original source excerpts. Review progress measures explicitly reviewed claims, not truth or confidence. Irrelevant claims are excluded from the brief.
+- **Approval:** claim/status/note changes and source changes invalidate prior approval. Approval is a local reviewer flag, not an authenticated signature or immutable audit trail. Unreviewed or unresolved active claims remain open risks even in an approved brief.
+- **Export:** Markdown includes the method, citations/excerpts, human notes, approval state, and uncertainty. Missing-information prompts can have no attached excerpt; they are not verified facts.
 
 ## Architecture
 
 ```text
 React + Vite
-  ├── src/data.js       fictional demo reports and claims
-  ├── src/analysis.js   deterministic analysis and brief/export logic
-  ├── src/main.jsx      interactive workspace, review panel, and brief
-  └── src/styles.css    responsive evidence-investigation visual system
+  ├── src/data.js           fictional demo reports and curated claims
+  ├── src/analysis.js       deterministic extraction, validation, review, brief/export
+   ├── src/analysis.test.js  offline analysis/workflow logic tests
+   ├── src/workflow.test.jsx React/jsdom interaction regression tests
+  ├── src/main.jsx          browser workspace and local persistence
+  └── src/styles.css        responsive workspace styling
 ```
 
-The current build intentionally uses a deterministic, transparent analysis path. This keeps the competition demo reliable without credentials or network access and avoids claiming that a local rule-based result was generated by AI. A future compatible AI provider can sit behind a server-side adapter using the placeholder variables in `.env.example`; credentials must never be sent to the browser or committed.
+There is no backend or existing AI integration. Application state stays in this browser's local storage; this is not a multi-user or server-backed workspace.
 
-## Two-minute demo
+## Two-minute demo walkthrough
 
-1. Open Proofline and click **Load demo case**.
-2. In the Evidence Map, select **A network failure caused the payment terminal outage**.
-3. Show the three original excerpts: terminal network error, normal nearby Wi-Fi, and the later unrelated network restart.
-4. Point out that the system does not merge those into a false conclusion: it marks the claim **Conflicting**.
-5. Select **The terminal may have run out of battery** and mark it **Unverified**, adding a review note.
-6. Open **Decision brief**. The note and unresolved risks update immediately.
-7. Click **Approve decision brief**. The app records a human approval while keeping the warning visible.
-8. Demonstrate **Copy Markdown** or **Download .md**.
+1. Open Proofline and use **Reset case** to start from the original case.
+2. Select **A network failure caused the payment terminal outage** in the Evidence Map.
+3. Compare the terminal error, normal nearby Wi-Fi, and unrelated later network restart excerpts. The curated suggestion is **Conflicting**, not a proven cause.
+4. Select **The terminal may have run out of battery**, mark it **Unverified**, and add a review note requesting battery evidence.
+5. Open **Decision brief** and show the updated note, citations, and unresolved risks.
+6. Click **Approve decision brief**. Explain that approval retains uncertainty and does not assert every claim was reviewed.
+7. Edit a claim or source and show approval returning to draft. Source edits replace curated claims with unverified sentence excerpts.
+8. Use **Copy Markdown** or **Download .md** to inspect the exported brief. Clipboard access depends on browser permissions; download is available if copying is blocked.
 
-## Buildathon compliance checklist
+This is a suggested script, not evidence that a recording exists or that the walkthrough has been verified in a browser.
 
-- Git repository: initialized locally with milestone commits.
-- Lockfile: `package-lock.json` is committed.
-- Runtime pin: `.nvmrc` and Docker build stage use Node 20.11.1.
-- Dockerfile: builds the Vite app and serves it with nginx.
-- Offline test: `npm test`.
-- Documentation: this README includes setup, run, test, Docker, architecture, and demo instructions.
-- Environment template: `.env.example` contains placeholders only.
-- Portability: no machine-specific absolute paths are used by the application.
+## Eight delivery requirements — evidence and status
+
+These track the project's eight delivery items, not a certification against official competition rules.
+
+| # | Requirement | Status / evidence |
+| --- | --- | --- |
+| 1 | Git repository and milestones | Initialized with application and private-config exclusion commits, followed by review/test hardening. No remote repository or submission has been created. |
+| 2 | Dependency lockfile | `package-lock.json` is included; package versions are exact and root runtime metadata matches `.nvmrc`. |
+| 3 | Runtime pin | Node 24.13.0 aligned in `.nvmrc`, `package.json` engines, and the Docker dependency stage; supported by installed tool engine ranges. |
+| 4 | Dockerfile | Dependency, runnable test, build, and non-root static web stages provided. Docker execution remains unverified because the binary is unavailable. |
+| 5 | Offline test entry point | `npm test` runs the installed Vitest logic suite; the network-isolated Docker test procedure is above and remains unverified. |
+| 6 | Documentation | Setup, actual npm commands, analysis behavior, limitations, demo script, and verification procedure are documented here. |
+| 7 | Environment template | `.env.example` states that no configuration is required; no unused credential variables imply a working adapter. |
+| 8 | Portability | Relative application paths, a lockfile, and runtime/container pins are supplied. Cross-platform execution has not been comprehensively verified. |
+
+**Official rules and recording:** the authoritative competition rules, submission requirements, and demo recording have not been verified. Check the official rules and create/review the recording before claiming submission readiness or compliance.
 
 ## Known limitations
 
-- Reports are text-based; file uploads and OCR are intentionally out of scope for the one-day build.
-- Adding or editing a source report does not automatically re-run generalized claim extraction. Existing evidence cards remain unchanged until a future analysis adapter is connected; the UI states this when a report is removed.
-- The demo analysis is deterministic and labelled as such. No AI-generated content is claimed without a configured, permitted runtime model.
+- Text reports only; no file ingestion, OCR, external data retrieval, or model inference.
+- Sentence splitting is intentionally simple and may split abbreviations or decimals; unverified excerpts require human interpretation.
+- The curated recommendation applies to the exact fictional demo only. Other reports require manual review and supporting evidence.
+- Local storage is browser/origin-specific and is not a backup. Export important briefs; resetting the case replaces local edits.
+- Human review and approval are local UI state, not identity verification, access control, or a tamper-proof audit log.
