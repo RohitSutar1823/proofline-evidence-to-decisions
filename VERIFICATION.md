@@ -9,6 +9,8 @@
 - `npm exec --offline --package=node@24.13.0 -- node node_modules/vite/bin/vite.js build` — production build passed under the pinned runtime.
 - Fresh local Git clone: `npm ci --offline --no-audit --no-fund && npm test && npm run build` — cache-only installation, 22 tests passed, build passed. This clone used host Node 24.16.0 and emitted the expected exact-engine-version warning; pinned-runtime checks were performed separately as above.
 - `curl --fail --silent --show-error -I http://localhost:5173/` — dev server returned HTTP 200.
+- `docker build --target test -t proofline-test .` followed by `docker run --rm --network none proofline-test` — container image built and all 22 tests passed with networking disabled at runtime.
+- `docker build -t proofline .` followed by `docker run --rm -p 8080:8080 proofline` and `curl --fail --silent --show-error -I http://localhost:8080/` — production image served successfully with HTTP 200 from unprivileged nginx.
 - `git diff --check` — no whitespace errors.
 
 ## Functional coverage
@@ -32,7 +34,6 @@ Authoritative source: [omnirush.ai/buildathon](https://omnirush.ai/buildathon), 
 
 ## Not verified / submission blockers
 
-- Docker command returned `docker: command not found`. Container builds, container serving, and `docker run --network none` tests **have not passed here**. The Dockerfile and procedure are included; run the README commands on a Docker-capable machine before submission.
 - A built-in browser tab exists but is awaiting website-access approval in the browser panel. No real-browser visual, responsive, or download-to-disk walkthrough has been verified. jsdom checks do not replace this.
 - The official page was inspected, but the entrant's buildathon dashboard, account join state, session list, recording capture/export, and Submission ID have not been inspected or certified.
 - The product contains no runtime generative AI. Its exact demo is curated; arbitrary reports receive conservative unverified sentence extraction. Do not describe this as general semantic contradiction detection or live AI inference.
