@@ -25,11 +25,11 @@ npm run build
 npm run preview
 ```
 
-`npm test` runs Vitest once: 10 analysis tests and 10 React interaction tests. Coverage includes curated demo matching, conservative extraction, source excerpts, human overrides, approval invalidation, report CRUD, search, storage validation/persistence, clipboard failure, download creation, dialog focus/Escape, and resetting the demo. React interactions run in jsdom, not a real browser. Tests and builds need installed dependencies but no runtime network access. `npm ci` initially needs registry access or a complete dependency cache.
+`npm test` runs Vitest once: 10 analysis tests and 12 React interaction tests. Coverage includes curated demo matching, conservative extraction, source excerpts, human overrides, approval invalidation, report CRUD, search, storage validation/persistence, stale-source removal, clipboard failure, download creation, dialog focus/Escape, and resetting the demo. React interactions run in jsdom, not a real browser. Tests and builds need installed dependencies but no runtime network access. `npm ci` initially needs registry access or a complete dependency cache.
 
 `npm run build` produces `dist/`; `npm run preview` serves that build locally for inspection.
 
-Latest local checks: `npm test` passed 2 files / 20 tests and `npm run build` succeeded. Both also passed under the exact pinned Node 24.13.0 runtime using npm's executable-package runner. A fresh Git clone installed with `npm ci --offline --no-audit --no-fund` from the local dependency cache, passed all tests, and built successfully. This cache-only install is not an OS-level network-isolation test. The built-in browser could not open a tab (timeout); the real-browser visual/responsive walkthrough remains unverified. See `VERIFICATION.md` for the exact evidence and gaps.
+Latest local checks: `npm test` passed 2 files / 22 tests and `npm run build` succeeded. Both also passed under the exact pinned Node 24.13.0 runtime using npm's executable-package runner. The CRUD test was made faster by scoping DOM queries and passes under the default Vitest five-second timeout; two consecutive full-suite runs passed. A fresh Git clone installed with `npm ci --offline --no-audit --no-fund` from the local dependency cache, passed all tests, and built successfully. This cache-only install is not an OS-level network-isolation test. The built-in browser tab still requires access approval, so the real-browser visual/responsive walkthrough remains unverified. See `VERIFICATION.md` for the exact evidence and gaps.
 
 ## Docker and offline verification
 
@@ -61,8 +61,8 @@ Open <http://localhost:8080>. Building images requires access to base images and
 React + Vite
   ├── src/data.js           fictional demo reports and curated claims
   ├── src/analysis.js       deterministic extraction, validation, review, brief/export
-   ├── src/analysis.test.js  offline analysis/workflow logic tests
-   ├── src/workflow.test.jsx React/jsdom interaction regression tests
+  ├── src/analysis.test.js   offline analysis/workflow logic tests
+  ├── src/workflow.test.jsx  React/jsdom interaction regression tests
   ├── src/main.jsx          browser workspace and local persistence
   └── src/styles.css        responsive workspace styling
 ```
