@@ -353,7 +353,7 @@ function App() {
 
         {view === "workspace" ? (
           <section className="workspace-grid">
-            <aside className="sources-panel panel">
+            <aside className="sources-panel panel" aria-label="Source reports">
               <PanelHeader
                 title="Source reports"
                 meta={`${caseData.reports.length} source reports`}
@@ -396,7 +396,7 @@ function App() {
                 <Icon name="plus" size={15} /> Add source report
               </button>
             </aside>
-            <section className="evidence-panel">
+            <section className="evidence-panel" aria-label="Evidence Map">
               <div className="evidence-head">
                 <div>
                   <div className="eyebrow">EVIDENCE MAP</div>
@@ -469,7 +469,7 @@ function App() {
                 )}
               </div>
             </section>
-            <aside className="review-panel panel">
+            <aside className="review-panel panel" aria-label="Claim review">
               <ReviewPanel
                 claim={selectedClaim}
                 reports={caseData.reports}
@@ -572,6 +572,7 @@ function ClaimCard({ claim, selected, onClick }) {
   return (
     <button
       className={`claim-card ${selected ? "selected" : ""}`}
+      aria-label={claim.text}
       onClick={onClick}
     >
       <div className="claim-card-head">
@@ -775,7 +776,7 @@ function BriefView({
     </section>
   );
   return (
-    <section className="brief-page">
+    <section className="brief-page" aria-label="Decision brief">
       <div className="brief-toolbar">
         <button className="back-button" onClick={onGoBack}>
           <Icon name="arrow" size={16} /> Back to evidence map

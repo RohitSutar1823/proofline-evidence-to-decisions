@@ -2,6 +2,7 @@
 import React from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { briefAsMarkdown } from './analysis.js'
 
 // Capture the production entry point's App without changing its public exports.
 // Testing Library still uses real React roots for every independent mount.
@@ -18,7 +19,13 @@ vi.mock('react-dom/client', async (importOriginal) => {
 
 const originalClaim = 'A network failure caused the payment terminal outage.'
 const revisedClaim = 'The cause requires terminal logs before a conclusion.'
-const click = (name) => fireEvent.click(screen.getByRole('button', { name }))
+// Use visible button labels for navigation. Global role/name queries recompute
+// styles and accessible names for every claim, even when we only need one tab.
+const click = (name) => fireEvent.click(screen.getByText(name, { selector: 'button' }))
+const reviewPanel = () => within(screen.getByLabelText('Claim review', { selector: 'aside' }))
+const evidenceMap = () => within(screen.getByLabelText('Evidence Map', { selector: 'section' }))
+const claimButton = (text) => evidenceMap().getByText(text, { selector: 'h3' }).closest('button')
+const queryClaimButton = (text) => evidenceMap().queryByText(text, { selector: 'h3' })?.closest('button') ?? null
 const change = (element, value) => fireEvent.change(element, { target: { value } })
 const openBrief = () => click(/^Decision brief/)
 const backToEvidence = () => click(/Back to evidence map/)
@@ -47,7 +54,8 @@ afterEach(() => {
 
 describe('Proofline evidence-to-decision workflow', () => {
   it('starts with an unresolved demo conflict and the three original source excerpts', () => {
-    expect(screen.getByRole('heading', { name: originalClaim, level: 2 })).toBeTruthy()
+    expect(reviewPanel().getByRole('heading', { name: originalClaim, level: 2 })).toBeTruthy()
+    expect(claimButton(originalClaim).getAttribute('aria-label')).toBe(originalClaim)
     expect(screen.getByText('Original evidence')).toBeTruthy()
     for (const quote of [
       'The terminal displayed a network error.',
@@ -65,7 +73,7 @@ describe('Proofline evidence-to-decision workflow', () => {
 
   it('carries edited claim wording into the brief while retaining original evidence', () => {
     change(screen.getByDisplayValue(originalClaim), revisedClaim)
-    expect(screen.getByRole('heading', { name: revisedClaim, level: 2 })).toBeTruthy()
+    expect(reviewPanel().getByRole('heading', { name: revisedClaim, level: 2 })).toBeTruthy()
     expect(screen.getByText('“The terminal displayed a network error.”')).toBeTruthy()
     openBrief()
     expect(screen.getByText(revisedClaim)).toBeTruthy()
@@ -93,46 +101,54 @@ describe('Proofline evidence-to-decision workflow', () => {
   })
 
   it('finds claims by original source excerpts and clears an empty search', () => {
-    const search = screen.getByRole('textbox', { name: 'Search claims' })
+    const search = screen.getByLabelText('Search claims')
     // This phrase exists in the source excerpt, but not in the claim wording.
     change(search, 'unrelated access-point issue')
-    expect(screen.getByRole('button', { name: new RegExp(originalClaim) })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /Cash registration remained available/ })).toBeNull()
+    expect(claimButton(originalClaim)).toBeTruthy()
+    expect(queryClaimButton('Cash registration remained available.')).toBeNull()
     change(search, 'no source contains this phrase')
     expect(screen.getByText('No claims found')).toBeTruthy()
     change(search, '')
-    expect(screen.getByRole('button', { name: /Cash registration remained available/ })).toBeTruthy()
+    expect(claimButton('Cash registration remained available.')).toBeTruthy()
   })
 
   it('regenerates unreviewed suggestions when a report is added, edited, and removed', () => {
-    click(/^✓?\s*Confirmed$/)
+    const review = reviewPanel()
+    const sources = within(screen.getByLabelText('Source reports', { selector: 'aside' }))
+    const evidence = evidenceMap()
+    // Claim button names include the entire card. Locate their unique headings
+    // instead of recomputing accessible names/styles for every card on each check.
+    const claimButton = (text) => evidence.getByText(text, { selector: 'h3' }).closest('button')
+    const queryClaimButton = (text) => evidence.queryByText(text, { selector: 'h3' })?.closest('button') ?? null
+
+    fireEvent.click(review.getByText('Confirmed', { selector: 'button span:last-child' }).closest('button'))
     expect(screen.getByText('Human reviewed')).toBeTruthy()
     // There are two visible add controls; use the icon control's exact label.
-    fireEvent.click(screen.getAllByRole('button', { name: 'Add source report' })[0])
-    let dialog = screen.getByRole('dialog', { name: 'Add a source report' })
-    change(within(dialog).getByRole('textbox', { name: 'Source name' }), 'Battery inspector')
-    change(within(dialog).getByRole('textbox', { name: 'Label' }), 'Report D')
-    change(within(dialog).getByRole('textbox', { name: 'Report text' }), 'Battery measured at 8 percent.')
-    fireEvent.click(within(dialog).getByRole('button', { name: /Save report/ }))
-    expect(screen.queryByRole('dialog')).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Battery inspector' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Battery measured at 8 percent/ }).textContent).toContain('Suggestion')
+    fireEvent.click(sources.getByLabelText('Add source report', { selector: 'button' }))
+    let dialog = screen.getByLabelText('Add a source report', { selector: '[role="dialog"]' })
+    change(within(dialog).getByLabelText('Source name'), 'Battery inspector')
+    change(within(dialog).getByLabelText('Label'), 'Report D')
+    change(within(dialog).getByLabelText('Report text'), 'Battery measured at 8 percent.')
+    fireEvent.click(within(dialog).getByText(/Save report/, { selector: 'button' }))
+    expect(screen.queryByLabelText('Add a source report', { selector: '[role="dialog"]' })).toBeNull()
+    expect(sources.getByText('Battery inspector', { selector: 'h4' })).toBeTruthy()
+    expect(claimButton('Battery measured at 8 percent.').textContent).toContain('Suggestion')
     expect(screen.queryByText('Human reviewed')).toBeNull()
-    expect(screen.queryByRole('button', { name: new RegExp(originalClaim) })).toBeNull()
+    expect(queryClaimButton(originalClaim)).toBeNull()
 
-    click('Edit Report D')
-    dialog = screen.getByRole('dialog', { name: 'Edit report' })
-    change(within(dialog).getByRole('textbox', { name: 'Report text' }), 'Battery measured at 12 percent.')
-    fireEvent.click(within(dialog).getByRole('button', { name: /Save report/ }))
-    expect(screen.queryByRole('button', { name: /Battery measured at 8 percent/ })).toBeNull()
-    expect(screen.getByRole('button', { name: /Battery measured at 12 percent/ }).textContent).toContain('Suggestion')
+    fireEvent.click(sources.getByLabelText('Edit Report D', { selector: 'button' }))
+    dialog = screen.getByLabelText('Edit report', { selector: '[role="dialog"]' })
+    change(within(dialog).getByLabelText('Report text'), 'Battery measured at 12 percent.')
+    fireEvent.click(within(dialog).getByText(/Save report/, { selector: 'button' }))
+    expect(queryClaimButton('Battery measured at 8 percent.')).toBeNull()
+    expect(claimButton('Battery measured at 12 percent.').textContent).toContain('Suggestion')
 
-    click('Remove Report D')
+    fireEvent.click(sources.getByLabelText('Remove Report D', { selector: 'button' }))
     expect(window.confirm).toHaveBeenCalledWith(expect.stringMatching(/Remove this source/))
-    expect(screen.queryByRole('heading', { name: 'Battery inspector' })).toBeNull()
-    expect(screen.queryByRole('button', { name: /Battery measured at 12 percent/ })).toBeNull()
+    expect(sources.queryByText('Battery inspector', { selector: 'h4' })).toBeNull()
+    expect(queryClaimButton('Battery measured at 12 percent.')).toBeNull()
     // Removing the extra source restores the curated demo suggestions.
-    expect(screen.getByRole('button', { name: new RegExp(originalClaim) }).textContent).toContain('Suggestion')
+    expect(claimButton(originalClaim).textContent).toContain('Suggestion')
     expect(screen.queryByText('Human reviewed')).toBeNull()
   })
 
@@ -178,7 +194,7 @@ describe('Proofline evidence-to-decision workflow', () => {
   })
 
   it('focuses the source dialog and dismisses it with Escape', () => {
-    fireEvent.click(screen.getAllByRole('button', { name: 'Add source report' })[0])
+    fireEvent.click(screen.getByLabelText('Add source report', { selector: 'button' }))
     const dialog = screen.getByRole('dialog')
     expect(document.activeElement).toBe(within(dialog).getByRole('textbox', { name: 'Source name' }))
     fireEvent.keyDown(document.activeElement, { key: 'Escape' })
@@ -191,5 +207,51 @@ describe('Proofline evidence-to-decision workflow', () => {
     expect(screen.getByDisplayValue(originalClaim)).toBeTruthy()
     expect(screen.queryByDisplayValue(revisedClaim)).toBeNull()
     expect(JSON.parse(localStorage.getItem('proofline-case')).briefApproved).toBe(false)
+  })
+
+  it('requires a deliberate review after wording, note, or classification changes', () => {
+    const review = reviewPanel()
+    fireEvent.click(review.getByText('Approve claim review', { selector: 'button' }))
+    expect(screen.getByText('Human reviewed')).toBeTruthy()
+    change(review.getByLabelText('Review note'), 'Check the terminal logs before choosing a cause.')
+    expect(screen.queryByText('Human reviewed')).toBeNull()
+    fireEvent.click(review.getByText('Approve claim review', { selector: 'button' }))
+    openBrief()
+    click(/Approve decision brief/)
+    expect(screen.getByText('Human approved')).toBeTruthy()
+    expect(screen.getByText('Check the terminal logs before choosing a cause.')).toBeTruthy()
+    backToEvidence()
+    change(reviewPanel().getByLabelText('Evidence classification'), 'unverified')
+    expect(screen.queryByText('Human reviewed')).toBeNull()
+    openBrief()
+    expect(screen.queryByText('Human approved')).toBeNull()
+    expect(screen.getByText('Review required')).toBeTruthy()
+    const unverifiedSection = screen.getByText('Unverified claims').closest('section')
+    expect(within(unverifiedSection).getByText(originalClaim)).toBeTruthy()
+  })
+
+  it('removes stale excerpts and approval after editing and deleting original demo sources', () => {
+    openBrief()
+    click(/Approve decision brief/)
+    backToEvidence()
+    fireEvent.click(screen.getByLabelText('Edit Report A', { selector: 'button' }))
+    const dialog = screen.getByLabelText('Edit report', { selector: '[role="dialog"]' })
+    change(within(dialog).getByLabelText('Report text'), 'The terminal battery was inspected at noon.')
+    fireEvent.click(within(dialog).getByText(/Save report/, { selector: 'button' }))
+    let stored = JSON.parse(localStorage.getItem('proofline-case'))
+    expect(stored.briefApproved).toBe(false)
+    expect(stored.claims.every((claim) => !claim.reviewed && claim.status === 'unverified')).toBe(true)
+    expect(screen.queryByText('“The terminal displayed a network error.”')).toBeNull()
+    expect(briefAsMarkdown(stored)).not.toContain('“The terminal displayed a network error.”')
+    fireEvent.click(screen.getByLabelText('Remove Report B', { selector: 'button' }))
+    stored = JSON.parse(localStorage.getItem('proofline-case'))
+    expect(stored.claims.flatMap((claim) => claim.sourceIds)).not.toContain('report-b')
+    for (const claim of stored.claims) for (const excerpt of claim.evidence) {
+      expect(stored.reports.find((report) => report.id === excerpt.reportId).text).toContain(excerpt.quote)
+    }
+    openBrief()
+    expect(screen.getByText(/Deterministic sentence extraction only/)).toBeTruthy()
+    expect(screen.getByText('Review required')).toBeTruthy()
+    expect(screen.queryByText(/Investigate the terminal battery level and connectivity logs/)).toBeNull()
   })
 })

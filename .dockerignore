@@ -1,1 +1,14 @@
 node_modules
+.git
+.opencode
+opencode.json
+opencode.jsonc
+dist
+.env
+.env.*
+!.env.example
+*.log
+logs
+.cache
+.npm
+.vite
