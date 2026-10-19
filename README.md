@@ -29,7 +29,7 @@ npm run preview
 
 `npm run build` produces `dist/`; `npm run preview` serves that build locally for inspection.
 
-Latest local checks: Node `v24.16.0`, `npm test` passed 2 files / 20 tests, and `npm run build` succeeded. The exact pinned Node 24.13.0 runtime has not yet been exercised. The built-in browser could not open a tab (timeout); the real-browser visual/responsive walkthrough remains unverified.
+Latest local checks: `npm test` passed 2 files / 20 tests and `npm run build` succeeded. Both also passed under the exact pinned Node 24.13.0 runtime using npm's executable-package runner. A fresh Git clone installed with `npm ci --offline --no-audit --no-fund` from the local dependency cache, passed all tests, and built successfully. This cache-only install is not an OS-level network-isolation test. The built-in browser could not open a tab (timeout); the real-browser visual/responsive walkthrough remains unverified. See `VERIFICATION.md` for the exact evidence and gaps.
 
 ## Docker and offline verification
 

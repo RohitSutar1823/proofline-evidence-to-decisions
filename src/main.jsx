@@ -724,7 +724,7 @@ function ReviewPanel({ claim, reports, onUpdate }) {
           <textarea
             value={claim.note || ""}
             onChange={(event) =>
-              onUpdate(claim.id, { note: event.target.value, reviewed: true })
+              onUpdate(claim.id, { note: event.target.value, reviewed: false })
             }
             placeholder="What should the next reviewer know?"
             rows="3"
