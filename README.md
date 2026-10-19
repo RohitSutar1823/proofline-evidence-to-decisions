@@ -97,7 +97,7 @@ These track the project's eight delivery items, not a certification against offi
 | 7 | Environment template | `.env.example` states that no configuration is required; no unused credential variables imply a working adapter. |
 | 8 | Portability | Relative application paths, a lockfile, and runtime/container pins are supplied. Cross-platform execution has not been comprehensively verified. |
 
-**Official rules and recording:** the authoritative competition rules, submission requirements, and demo recording have not been verified. Check the official rules and create/review the recording before claiming submission readiness or compliance.
+**Official buildathon reference:** [Frontier Buildathon 2026 beginner's guide](https://omnirush.ai/buildathon) was checked on October 19, 2026. It states that submissions close **20 October at 11:59 PM IST**; the required destination is the OmniRush buildathon dashboard, where entrants add their track, public GitHub repository, and OmniRush sessions, then copy the resulting Submission ID into Unstop. The guide says the repository must be public and belong to the connected GitHub account. A demo video and live link are optional; a 2–3 minute video is recommended. It requires OmniRush to be the only generative AI tool, solo participation, recorded OmniRush sessions, a README, lockfile, pinned runtime, Dockerfile, offline test command, `.env.example`, and no machine-specific paths. It does **not** require runtime AI in the submitted product; the product can be an offline build, but the build must be made with OmniRush. Verify the dashboard and current official page immediately before submission because deadlines and forms are authoritative at the server.
 
 ## Known limitations
 

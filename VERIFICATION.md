@@ -17,12 +17,24 @@ Automated tests inspect the three original conflict excerpts, edit claim wording
 
 The report CRUD test previously exceeded the default five-second limit when it performed repeated whole-page accessible-name queries. The test now scopes queries to the source, evidence, and review regions and uses unique headings for claim cards. The blanket timeout increase was removed; the CRUD test and two consecutive full suites pass with the default five-second timeout. No tests are skipped.
 
+## Official requirements checked
+
+Authoritative source: [omnirush.ai/buildathon](https://omnirush.ai/buildathon), checked October 19, 2026.
+
+- Deadline: **20 October 2026, 11:59 PM IST**.
+- Required submission destination: OmniRush buildathon dashboard at `https://omnirush.ai/console/buildathon`; add the Human × AI track, public GitHub repository, and OmniRush sessions there.
+- After dashboard submission, copy the generated Submission ID into the Unstop event page: `https://unstop.com/p/omnirush-agentic-buildathon-2026-omnirush-1769914`.
+- Repository: public GitHub repository owned by the connected GitHub account.
+- Video/live link: neither is required; a 2–3 minute demo video is recommended and a live link is optional when hosting is possible.
+- AI/tool rule: OmniRush must be the only generative AI tool used for code, text, or images. Normal documentation/search tools are allowed. Participation is solo, and judges check that the project was built in recorded OmniRush sessions.
+- Runtime AI: the official guide does not require the submitted app to call an AI model at runtime. Proofline's offline deterministic behavior is therefore compatible, but it must not be described as live AI inference.
+- Rebuild checklist: README, lockfile, pinned language version, Dockerfile, one offline test command, `.env.example`, and no computer-specific paths.
+
 ## Not verified / submission blockers
 
 - Docker command returned `docker: command not found`. Container builds, container serving, and `docker run --network none` tests **have not passed here**. The Dockerfile and procedure are included; run the README commands on a Docker-capable machine before submission.
 - A built-in browser tab exists but is awaiting website-access approval in the browser panel. No real-browser visual, responsive, or download-to-disk walkthrough has been verified. jsdom checks do not replace this.
-- Official competition rules were not present in the workspace and no authoritative rules URL was supplied. Eligibility, runtime-AI requirements, recording format, and submission requirements need checking against the official source.
-- Work was performed through OmniRush tool sessions, including delegated review and test implementation. Recording capture/export and submission receipts have not been inspected or certified.
+- The official page was inspected, but the entrant's buildathon dashboard, account join state, session list, recording capture/export, and Submission ID have not been inspected or certified.
 - The product contains no runtime generative AI. Its exact demo is curated; arbitrary reports receive conservative unverified sentence extraction. Do not describe this as general semantic contradiction detection or live AI inference.
 - Git commits are local. No remote push or competition submission was performed.
 
