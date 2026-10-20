@@ -2,6 +2,14 @@
 
 Proofline is a local, human-in-the-loop evidence workspace for overlapping, incomplete, or conflicting reports. Its Evidence Map links claims to source wording, makes uncertainty visible, and produces a reviewable Markdown decision brief.
 
+Built for the **OmniRush Frontier Buildathon 2026, Human × AI track**.
+
+Live application: https://proofline-evidence-to-decisions.vercel.app/
+
+Full captioned demo video: https://drive.google.com/file/d/1Ksmw1OuY-xsBKsgG3oMtedTxgqjCLlA4/view?usp=sharing
+
+![Proofline Demo](screenshots/demo.gif)
+
 The Campus Innovation Fair case is fictional. There is **no runtime AI, model adapter, API key, or external service**. System suggestions and human decisions are distinct; approving a brief does not verify its evidence or mean every claim has been reviewed.
 
 ## Run locally
@@ -44,7 +52,7 @@ docker run --rm -p 8080:8080 proofline
 
 Open <http://localhost:8080>. Building images requires access to base images and npm packages unless already cached. The separate `docker run --rm --network none proofline-test` command verifies tests with container networking disabled **after** dependencies are installed; it does not claim the initial image build is offline. Check its exit code is zero. Static web serving can then be inspected using the published port and the browser's offline mode after loading the app.
 
-**Docker verification status:** not executed in this environment because the Docker binary is absent. These commands are a verification procedure, not a recorded successful Docker run. Image tags pin versions, not immutable image digests.
+**Docker verification status:** verified in `VERIFICATION.md`. `docker build --target test -t proofline-test .` and `docker run --rm --network none proofline-test` passed all 22 tests with container networking disabled at runtime, and `docker build -t proofline .` plus `docker run --rm -p 8080:8080 proofline` served HTTP 200 from the production image.
 
 ## How analysis and review work
 
@@ -91,8 +99,8 @@ These track the project's eight delivery items, not a certification against offi
 | 1 | Git repository and milestones | Initialized with application and private-config exclusion commits, followed by review/test hardening. No remote repository or submission has been created. |
 | 2 | Dependency lockfile | `package-lock.json` is included; package versions are exact and root runtime metadata matches `.nvmrc`. |
 | 3 | Runtime pin | Node 24.13.0 aligned in `.nvmrc`, `package.json` engines, and the Docker dependency stage; supported by installed tool engine ranges. |
-| 4 | Dockerfile | Dependency, runnable test, build, and non-root static web stages provided. Docker execution remains unverified because the binary is unavailable. |
-| 5 | Offline test entry point | `npm test` runs the installed Vitest logic suite; the network-isolated Docker test procedure is above and remains unverified. |
+| 4 | Dockerfile | Dependency, runnable test, build, and non-root static web stages provided. `VERIFICATION.md` records successful Docker test-target and production-image checks. |
+| 5 | Offline test entry point | `npm test` runs the installed Vitest logic suite; `VERIFICATION.md` also records a passing network-isolated Docker test run (`docker run --rm --network none proofline-test`) after image build. |
 | 6 | Documentation | Setup, actual npm commands, analysis behavior, limitations, demo script, and verification procedure are documented here. |
 | 7 | Environment template | `.env.example` states that no configuration is required; no unused credential variables imply a working adapter. |
 | 8 | Portability | Relative application paths, a lockfile, and runtime/container pins are supplied. Cross-platform execution has not been comprehensively verified. |
